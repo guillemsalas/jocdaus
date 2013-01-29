@@ -90,15 +90,15 @@ $(function() {
                 S4() + S4() + S4()
             );
     };
-    var timer = localStorage['scategoris_time'];
+    var timer = localStorage['daus_time'];
     if (!timer) {
         timer = 120;
     }
-    var dicer = localStorage['scategoris_dice'];
+    var dicer = localStorage['daus_dice'];
     if (!dicer) {
         dicer = 'A-Z';
     }
-    var countr = localStorage['scategoris_count'];
+    var countr = localStorage['daus_count'];
     if (!countr) {
         countr = 1;
     }
@@ -169,9 +169,9 @@ $(function() {
         }
     }
     vm.cache = ko.computed(function() {
-		localStorage['scategoris_count'] = vm.count();
-		localStorage['scategoris_dice'] = vm.dice();
-		localStorage['scategoris_time'] = vm.time();
+		localStorage['daus_count'] = vm.count();
+		localStorage['daus_dice'] = vm.dice();
+		localStorage['daus_time'] = vm.time();
         });
     ko.applyBindings(vm);
 });
