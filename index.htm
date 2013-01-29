@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joc de daus</title>
+    <!--[if lt IE 9]>
+    <script src="https://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <![endif]-->
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>    
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.2.2/bootstrap.min.js"></script>    
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script> 
+
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="icon" href="img/favicon.jpg">
+    <link rel="shortcut icon" href="img/favicon.jpg">
+</head>
+<body>
+    
+    <div class="container">
+	<div class="row">
+            <div class="span12">              
+        	<h1>Joc de daus</h1>        
+            </div>
+        </div>    
+        <div class="hero-unit" data-bind="click: startOrStop" style="cursor: pointer">
+            <h1 data-bind="text: letter" style="text-align: center; font-size: 8em"></h1>
+		<hr/>
+   	    <h1 style="text-align: center" data-bind="text: countdown, visible: countdown() > 0"></h1>
+        </div>
+	
+        <div class="row">
+            <div class="span6">              
+                <form data-bind="submit: function(){}">
+                    <label>Temps (segons): </label>
+		    <small>Trieu la duració d'una ronda, 0 per desactivar.</small>
+                    <div class="controls">
+                        <input type="number" class="input-block-level" data-bind="value: time" style="text-align:center">
+                    </div>
+		    <label>Tipus de dau</label>
+		    <small>Trieu el tipus de dau que voleu utitlizar, de lletres o de nombres de l'1 al 6</small>
+                    <div class="controls">
+                        <select class="input-block-level" data-bind="value: dice, options : dices"></select>
+                    </div>
+
+                    <label>Nombre de daus: </label>
+		    <small>Indiqueu el nombre de daus amb els que voleu jugar, 0 per a desactivar.</small>
+                    <div class="controls">
+                        <input type="number" class="input-block-level" data-bind="value: count" style="text-align:center">
+                    </div>
+		    
+                </form>                                
+            </div>
+            <div class="span6">
+                 <h2>Joc de daus</h2>
+		<p>https://github.com/</p>
+            </div>
+        </div>        
+    </div>
+	<audio id="alarm">
+	    <source src="snd/alarm.ogg" type="audio/ogg">
+	    <source src="snd/alarm.mp3" type="audio/mp3">
+	</audio>
+<script>
+$(function() {
+    function randomString(chars) {
+        var string_length = 1;
+        var randomstring = '';
+        for (var i=0; i<string_length; i++) {
+            var rnum = Math.floor(Math.random() * chars.length);
+            randomstring += chars.substring(rnum,rnum+1);
+        }
+        return randomstring;
+    }
+    function GUID ()
+    {
+        var S4 = function ()
+        {
+            return Math.floor(
+                    Math.random() * 0x10000 /* 65536 */
+                ).toString(16);
+        };
+
+        return (
+                S4() + S4() + "-" +
+                S4() + "-" +
+                S4() + "-" +
+                S4() + "-" +
+                S4() + S4() + S4()
+            );
+    };
+    var timer = localStorage['scategoris_time'];
+    if (!timer) {
+        timer = 120;
+    }
+    var dicer = localStorage['scategoris_dice'];
+    if (!dicer) {
+        dicer = 'A-Z';
+    }
+    var countr = localStorage['scategoris_count'];
+    if (!countr) {
+        countr = 1;
+    }
+    var snd = document.getElementById('alarm');
+    snd.load();
+    var vm = {
+        'letter' : ko.observable('?'),
+        'time' : ko.observable(timer),
+        'round' : ko.observable(0),
+	'count' : ko.observable(countr),
+        'countdown' : ko.observable(0),
+	'dice' : ko.observable(dicer),
+	'dices' : ko.observableArray(['Lletres (A-Z)','Nombres (1-6)']),
+        'cancel' : function() {
+            vm.round(0);
+            vm.countdown(0);
+        },
+	'random' : function() {
+		var str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', rnd = '';
+		if (vm.dice() != 'letters') {
+			 str = '123456';
+		}
+		for (var i = vm.count(); i > 0; i--) {
+			rnd += ' '+ randomString(str);
+		}
+		vm.letter(rnd);
+	},
+        'start' : function() {
+            var run = GUID(),
+                time = parseInt(vm.time())*1000;            
+            vm.random();
+	    if (time > 0) {
+		vm.round(run);
+	        vm.countdown(time/1000);		
+		var decrease = function() {
+		        time -= 100;                
+		        if (vm.round() == run) {
+		            vm.countdown(time/1000);
+		            if (time > 0) {
+		                setTimeout(function() { decrease(); },100);
+		            } else {
+		                vm.stop();
+		                vm.alert();
+		            }                    
+		        } 
+            	};		
+            	decrease(time);
+	    } else {
+		vm.stop();
+	    }
+        },
+        'startOrStop' : function() {
+            if (vm.round() == 0) {
+                vm.start();
+            } else {
+                vm.stop();
+            }
+        },
+	'stop' : function() {
+		vm.countdown(0);
+		vm.round(0);
+	}, 
+        'alert' : function() {
+            snd.play();
+            if (confirm("Play next round?")) {
+                vm.start();
+            }
+        }
+    }
+    vm.cache = ko.computed(function() {
+		localStorage['scategoris_count'] = vm.count();
+		localStorage['scategoris_dice'] = vm.dice();
+		localStorage['scategoris_time'] = vm.time();
+        });
+    ko.applyBindings(vm);
+});
+</script>
+</body>
+</html>
